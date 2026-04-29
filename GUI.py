@@ -147,7 +147,8 @@ def main():
                                 sudoku_board.initial_reduction()
 
                 if event.key == pygame.K_s:
-                    sudoku_board.ac3() 
+                    sudoku_board.ac3()
+                    sudoku_board.backtrack_solve()
                     
                 
                 if event.key == pygame.K_r:

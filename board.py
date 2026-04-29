@@ -69,6 +69,37 @@ class Board:
 
     def ac3(self):
        return AC3.ac3(self)
+    
+    def find_unassigned(self):
+        for r in range(9):
+            for c in range(9):
+                if self.grid[r][c] == 0:
+                    return (r, c)
+        return None
+
+    def is_valid(self, r, c, val):
+        for nr, nc in self.get_neighbors(r, c):
+            if self.grid[nr][nc] == val:
+                return False
+        return True
+
+    def backtrack_solve(self):
+        cell = self.find_unassigned()
+        if not cell:
+            return True
+
+        r, c = cell
+
+        for val in self.domains[(r, c)]:
+            if self.is_valid(r, c, val):
+                self.grid[r][c] = val
+
+                if self.backtrack_solve():
+                    return True
+
+                self.grid[r][c] = 0
+
+        return False
 
     def display(self):
         """Console print for debugging."""

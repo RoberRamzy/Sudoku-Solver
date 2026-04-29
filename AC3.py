@@ -4,10 +4,10 @@ def revise(board, xi, xj):
     revised = False
     # create a copy of the set to safely iterate while modifying the original
     for x in list(board.domains[xi]):
-        if len(board.domains[xj]) == 1 and x in board.domains[xj]:
+        if all(x == y for y in board.domains[xj]):
             board.domains[xi].remove(x)
             revised = True
-            print(f"Tree update: Arc {xi} -> {xj}. Removed {x} from {xi}. New domain: {board.domains[xi]}")
+            print(f"Tree update: Arc {xi} -> {xj}. Removed {x}. New domain: {board.domains[xi]}")
     return revised
 
 # enforce arc consistency for all variable to solve or simplify the board
@@ -47,6 +47,8 @@ def ac3(board):
                 if board.grid[r][c] == 0 and len(board.domains[(r, c)]) == 1:
                     val = list(board.domains[(r, c)])[0]
                     board.set_cell(r, c, val)
+                    for neighbor in board.get_neighbors(r, c):
+                        queue.append((neighbor, (r, c)))
                     changes_made = True
 
     print("AC-3 Algorithm Completed!")
