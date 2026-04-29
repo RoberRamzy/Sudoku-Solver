@@ -1,3 +1,5 @@
+import AC3
+
 class Board:
     def __init__(self):
         self.grid = [[0 for _ in range(9)] for _ in range(9)]
@@ -66,10 +68,7 @@ class Board:
         return conflicts
 
     def ac3(self):
-       
-        print("AC-3 Algorithm Triggered")
-   
-        pass
+       return AC3.ac3(self)
 
     def display(self):
         """Console print for debugging."""

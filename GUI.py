@@ -86,9 +86,21 @@ def main():
     
     sudoku_board = board.Board()
     # Sample starting numbers
-    sudoku_board.set_cell(0, 0, 5, True)
-    sudoku_board.set_cell(0, 1, 3, True)
-    sudoku_board.set_cell(1, 0, 6, True)
+    puzzle = [
+        [7, 9, 0, 0, 1, 3, 6, 0, 0],
+        [4, 0, 0, 0, 7, 0, 3, 0, 0],
+        [1, 0, 0, 2, 4, 0, 9, 7, 5],
+        [5, 0, 0, 6, 0, 0, 2, 0, 7],
+        [0, 7, 0, 0, 0, 1, 8, 0, 0],
+        [8, 0, 6, 9, 2, 0, 5, 0, 0],
+        [6, 0, 1, 0, 0, 2, 0, 5, 3],
+        [3, 0, 0, 0, 0, 0, 4, 0, 9],
+        [0, 2, 4, 0, 3, 5, 0, 0, 0]
+    ]
+    for r in range(9):
+        for c in range(9):
+            if puzzle[r][c] != 0:
+                sudoku_board.set_cell(r, c, puzzle[r][c], True)
     sudoku_board.initial_reduction()
 
     selected_cell = None
