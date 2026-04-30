@@ -216,7 +216,7 @@ def main():
 
                 if event.key == pygame.K_s:
                     sudoku_board.ac3()
-                    sudoku_board.backtrack_solve()
+                    sudoku_board.backtrack_fc()
                     ac3_generator = None
                     current_step  = None
                     recent_commit = None
@@ -251,8 +251,8 @@ def main():
                                 if current_step.get("done"):
                                     ac3_generator = None
                                     # If cells still remain, backtrack to fill them
-                                    if sudoku_board.find_unassigned():
-                                        sudoku_board.backtrack_solve()
+                                    if sudoku_board.find_unassigned_mrv():
+                                        sudoku_board.backtrack_fc()
                                     break
 
                                 # AC3 found a contradiction — nothing more to do
@@ -278,9 +278,9 @@ def main():
                         except StopIteration:
                             ac3_generator = None
                             # Generator exhausted without a done/fail — finish with backtrack
-                            if sudoku_board.find_unassigned():
-                                sudoku_board.backtrack_solve()
-                                
+                            if sudoku_board.find_unassigned_mrv():
+                                sudoku_board.backtrack_fc()
+
                 if event.key == pygame.K_r:
                     sudoku_board  = load_puzzle(DEFAULT_PUZZLE)
                     ac3_generator = None   # FIX: clear stale generator

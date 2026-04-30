@@ -1,11 +1,15 @@
+import time
 # revise domain of xi given domain of xj
 # returns true if the domain of xi was changed
 def revise(board, xi, xj):
     revised = False
     # create a copy of the set to safely iterate while modifying the original
     for x in list(board.domains[xi]):
+        board.metrics.arc_checks += 1
+
         if all(x == y for y in board.domains[xj]):
             board.domains[xi].remove(x)
+            board.metrics.domain_reductions += 1
             revised = True
             print(f"Tree update: Arc {xi} -> {xj}. Removed {x}. New domain: {board.domains[xi]}")
     return revised
@@ -17,10 +21,12 @@ def ac3_steps(board):
         for c in range(9):
             xi = (r, c)
             for xj in board.get_neighbors(r, c):
+                board.metrics.queue_pushes += 1
                 queue.append((xi, xj))
 
     while queue:
         xi, xj = queue.pop(0)
+        board.metrics.queue_pops += 1
 
         before = board.domains[xi].copy()
         changed = revise(board, xi, xj)
@@ -41,6 +47,7 @@ def ac3_steps(board):
 
             for xk in board.get_neighbors(*xi):
                 if xk != xj:
+                    board.metrics.queue_pushes += 1
                     queue.append((xk, xi))
 
     yield {"done": True}
@@ -56,11 +63,14 @@ def ac3(board):
         for c in range(9):
             xi = (r, c)
             for xj in board.get_neighbors(r,c):
+                board.metrics.queue_pushes += 1
                 queue.append((xi, xj))
 
+    start = time.perf_counter()
     # apply arc consistency
     while queue:
         xi, xj = queue.pop(0)
+        board.metrics.queue_pops += 1
 
         if revise(board, xi, xj):
             # if domain becomes empty, sudoku is unsolvable
@@ -71,6 +81,7 @@ def ac3(board):
             # if xi's domain was reduced, re-evaluate all it neighbors (except xj)
             for xk in board.get_neighbors(xi[0], xi[1]):
                 if xk != xj:
+                    board.metrics.queue_pushes += 1
                     queue.append((xk, xi))
 
     # update sudoku grid based on reduced domains
@@ -84,8 +95,10 @@ def ac3(board):
                     val = list(board.domains[(r, c)])[0]
                     board.set_cell(r, c, val)
                     for neighbor in board.get_neighbors(r, c):
+                        board.metrics.queue_pushes += 1
                         queue.append((neighbor, (r, c)))
                     changes_made = True
 
     print("AC-3 Algorithm Completed!")
+    board.metrics.ac3_time = (time.perf_counter() - start) * 1000
     return True

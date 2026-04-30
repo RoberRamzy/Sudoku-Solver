@@ -1,5 +1,17 @@
 import AC3
 
+import time
+
+class Metrics:
+    def __init__(self):
+        self.arc_checks = 0
+        self.domain_reductions = 0
+        self.queue_pushes = 0
+        self.queue_pops = 0
+        self.bt_calls = 0
+        self.ac3_time = 0
+        self.bt_time = 0
+
 class Board:
     def __init__(self):
         self.grid = [[0 for _ in range(9)] for _ in range(9)]
@@ -7,7 +19,8 @@ class Board:
         self.initial_fixed = [[False for _ in range(9)] for _ in range(9)]
         # CSP Domains
         self.domains = {(r, c): set(range(1, 10)) for r in range(9) for c in range(9)}
-
+        self.metrics = Metrics()
+    
     def get_neighbors(self, row, col):
         
         neighbors = set()
@@ -79,6 +92,24 @@ class Board:
                 if self.grid[r][c] == 0:
                     return (r, c)
         return None
+    def find_unassigned_mrv(self):
+        best_cell = None
+        best_domain_size = 10  # max is 9
+
+        for r in range(9):
+            for c in range(9):
+                if self.grid[r][c] == 0:
+                    size = len(self.domains[(r, c)])
+
+                    if size < best_domain_size:
+                        best_domain_size = size
+                        best_cell = (r, c)
+
+                    # early exit: can't get better than 1
+                    if best_domain_size == 1:
+                        return best_cell
+
+        return best_cell
 
     def is_valid(self, r, c, val):
         for nr, nc in self.get_neighbors(r, c):
@@ -87,7 +118,7 @@ class Board:
         return True
 
     def backtrack_solve(self):
-        cell = self.find_unassigned()
+        cell = self.find_unassigned_mrv()
         if not cell:
             return True
 
@@ -122,7 +153,7 @@ class Board:
         self.initial_fixed = [[False]*9 for _ in range(9)]
         # Step 2: Fill board with a full valid solution (randomized backtracking)
         def fill():
-            cell = self.find_unassigned()
+            cell = self.find_unassigned_mrv()
             if not cell:
                 return True
             r, c = cell
@@ -158,6 +189,69 @@ class Board:
                     self.initial_fixed[r][c] = True
                     self.domains[(r, c)] = {self.grid[r][c]}
         self.initial_reduction()
+
+    # BACK TRACKING WITH FORWARD CHECKING
+    def forward_check(self, r, c, val):
+        """
+        Removes `val` from neighbors' domains.
+        Returns False if any domain becomes empty.
+        """
+
+        for nb in self.get_neighbors(r, c):
+            if val in self.domains[nb]:
+                self.domains[nb].remove(val)
+
+                if len(self.domains[nb]) == 0:
+                    return False
+
+        return True
+
+    def copy_domains(self):
+        return {k: v.copy() for k, v in self.domains.items()}
+    
+    def restore_domains(self, backup):
+        self.domains = backup
+
+    def backtrack_fc(self, metrics=None):
+        if metrics:
+            metrics.bt_calls += 1
+
+        cell = self.find_unassigned_mrv()
+        if not cell:
+            return True
+
+        r, c = cell
+
+        for val in list(self.domains[(r, c)]):
+            if self.is_valid(r, c, val):
+
+                # backup state
+                backup = self.copy_domains()
+                old_val = self.grid[r][c]
+
+                # assign
+                self.grid[r][c] = val
+                self.domains[(r, c)] = {val}
+
+                # forward check
+                ok = self.forward_check(r, c, val)
+
+                if metrics and ok:
+                    # domain reductions = how many values got removed
+                    # (approximation-based but acceptable for reports)
+                    metrics.domain_reductions += sum(
+                        1 for nb in self.get_neighbors(r, c)
+                        if val not in self.domains[nb]
+                    )
+
+                if ok and self.backtrack_fc(metrics):
+                    return True
+
+                # restore
+                self.grid[r][c] = old_val
+                self.restore_domains(backup)
+
+        return False
 
     def display(self):
         """Console print for debugging."""
