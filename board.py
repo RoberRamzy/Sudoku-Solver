@@ -67,6 +67,9 @@ class Board:
                             conflicts.add((nr, nc))
         return conflicts
 
+    def ac3_steps(self):
+       return AC3.ac3_steps(self)
+
     def ac3(self):
        return AC3.ac3(self)
     
@@ -100,6 +103,61 @@ class Board:
                 self.grid[r][c] = 0
 
         return False
+    
+    def is_solvable(self):
+        import copy
+        temp = copy.deepcopy(self)
+        return temp.backtrack_solve()
+
+    def generate_random_puzzle(self, clues=30):
+        """
+        Generates a random solvable Sudoku puzzle using backtracking.
+        1. Fill the board completely with a valid solution using randomized backtracking.
+        2. Remove (81 - clues) cells, keeping the puzzle solvable.
+        """
+        import random, copy
+        # Step 1: Reset board to empty
+        self.grid = [[0]*9 for _ in range(9)]
+        self.domains = {(r, c): set(range(1, 10)) for r in range(9) for c in range(9)}
+        self.initial_fixed = [[False]*9 for _ in range(9)]
+        # Step 2: Fill board with a full valid solution (randomized backtracking)
+        def fill():
+            cell = self.find_unassigned()
+            if not cell:
+                return True
+            r, c = cell
+            values = list(range(1, 10))
+            random.shuffle(values)  # randomize order so each puzzle is unique
+            for val in values:
+                if self.is_valid(r, c, val):
+                    self.grid[r][c] = val
+                    if fill():
+                        return True
+                    self.grid[r][c] = 0
+            return False
+        fill()
+        # Step 3: Remove cells one-by-one, checking solvability after each removal
+        cells = [(r, c) for r in range(9) for c in range(9)]
+        random.shuffle(cells)
+        removed = 0
+        target_removals = 81 - clues
+        for r, c in cells:
+            if removed >= target_removals:
+                break
+            backup = self.grid[r][c]
+            self.grid[r][c] = 0
+            # Verify the puzzle is still uniquely solvable
+            if self.is_solvable():
+                removed += 1
+            else:
+                self.grid[r][c] = backup  # restore if removing breaks solvability
+        # Step 4: Mark remaining filled cells as fixed/initial
+        for r in range(9):
+            for c in range(9):
+                if self.grid[r][c] != 0:
+                    self.initial_fixed[r][c] = True
+                    self.domains[(r, c)] = {self.grid[r][c]}
+        self.initial_reduction()
 
     def display(self):
         """Console print for debugging."""

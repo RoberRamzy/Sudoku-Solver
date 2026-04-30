@@ -10,6 +10,42 @@ def revise(board, xi, xj):
             print(f"Tree update: Arc {xi} -> {xj}. Removed {x}. New domain: {board.domains[xi]}")
     return revised
 
+
+def ac3_steps(board):
+    queue = []
+    for r in range(9):
+        for c in range(9):
+            xi = (r, c)
+            for xj in board.get_neighbors(r, c):
+                queue.append((xi, xj))
+
+    while queue:
+        xi, xj = queue.pop(0)
+
+        before = board.domains[xi].copy()
+        changed = revise(board, xi, xj)
+
+        # 🔥 yield step info to GUI
+        yield {
+            "xi": xi,
+            "xj": xj,
+            "before": before,
+            "after": board.domains[xi].copy(),
+            "changed": changed
+        }
+
+        if changed:
+            if len(board.domains[xi]) == 0:
+                yield {"fail": True}
+                return
+
+            for xk in board.get_neighbors(*xi):
+                if xk != xj:
+                    queue.append((xk, xi))
+
+    yield {"done": True}
+
+
 # enforce arc consistency for all variable to solve or simplify the board
 def ac3(board):
     print("AC-3 Algorithm Triggered")
